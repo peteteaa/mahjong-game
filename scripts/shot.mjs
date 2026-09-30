@@ -1,5 +1,6 @@
 // Screenshot (and optionally click through) a page with headless Chrome over CDP.
-// usage: node scripts/shot.mjs <url> <out.png> [waitMs] [x,y@delayMs ...]
+// usage: node scripts/shot.mjs <url> <out.png> [waitMs] [step ...]
+// A step is either "x,y@delayMs" (a click) or "js:<expression>@delayMs".
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -62,19 +63,31 @@ await send("Runtime.enable");
 await send("Page.navigate", { url });
 await sleep(wait);
 
-for (const click of clicks) {
-	const [coords, delay] = click.split("@");
-	const [x, y] = coords.split(",").map(Number);
-	for (const type of ["mousePressed", "mouseReleased"]) {
-		await send("Input.dispatchMouseEvent", {
-			type,
-			x,
-			y,
-			button: "left",
-			clickCount: 1,
+for (const step of clicks) {
+	const at = step.lastIndexOf("@");
+	const body = at > 0 ? step.slice(0, at) : step;
+	const delay = at > 0 ? Number(step.slice(at + 1)) : 1500;
+
+	if (body.startsWith("js:")) {
+		const result = await send("Runtime.evaluate", {
+			expression: body.slice(3),
+			returnByValue: true,
+			awaitPromise: true,
 		});
+		if (result?.exceptionDetails) console.error("eval failed:", result.exceptionDetails.text);
+	} else {
+		const [x, y] = body.split(",").map(Number);
+		for (const type of ["mousePressed", "mouseReleased"]) {
+			await send("Input.dispatchMouseEvent", {
+				type,
+				x,
+				y,
+				button: "left",
+				clickCount: 1,
+			});
+		}
 	}
-	await sleep(Number(delay ?? 1500));
+	await sleep(delay);
 }
 
 const shot = await send("Page.captureScreenshot", { format: "png" });

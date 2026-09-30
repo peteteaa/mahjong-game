@@ -64,6 +64,9 @@ function driveHuman() {
 		return;
 	}
 	if (s.awaiting === "claim") {
+		claimWindows += 1;
+		for (const option of s.claimOptions)
+			offered.set(option.type, (offered.get(option.type) ?? 0) + 1);
 		const discard = s.lastDiscard;
 		const choice = discard
 			? chooseClaim(
@@ -78,14 +81,19 @@ function driveHuman() {
 					discard.tile.kind,
 				)
 			: null;
-		if (choice) s.humanClaim(choice);
-		else s.humanPass();
+		if (choice) {
+			claimsTaken += 1;
+			s.humanClaim(choice);
+		} else s.humanPass();
 	}
 }
 
 const GAMES = Number(process.argv[2] ?? 5);
 let wins = 0;
 let draws = 0;
+let claimWindows = 0;
+let claimsTaken = 0;
+const offered = new Map<string, number>();
 let faanTotal = 0;
 const patternTally = new Map<string, number>();
 
@@ -118,6 +126,10 @@ async function run() {
 
 	console.log(`games: ${GAMES}  hands won: ${wins}  washed out: ${draws}`);
 	console.log(`average faan on a win: ${(faanTotal / Math.max(1, wins)).toFixed(2)}`);
+	console.log(
+		`call windows offered to seat 0: ${claimWindows} (${claimsTaken} taken) — ` +
+			[...offered.entries()].map(([type, n]) => `${type} ${n}`).join(", "),
+	);
 	const top = [...patternTally.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
 	for (const [name, n] of top) console.log(`  ${n.toString().padStart(3)}  ${name}`);
 	console.log(problems === 0 ? "invariants: OK" : `invariants: ${problems} problems`);

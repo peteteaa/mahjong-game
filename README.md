@@ -32,19 +32,37 @@ npm run sim 8      # headless: four computer players run 8 games, checks invaria
 - The **Hand reading** panel tells you how many tiles you are from ready, and
   which tiles you are waiting on once you are.
 
-### Table speed
+### Call buttons
 
-How long the computer players take over each move is adjustable at any time —
-**Relaxed**, **Normal**, **Brisk** or **Blitz** — from the title screen or from
-the panel under the scores while you play. The choice is remembered between
-sessions. It only paces the opponents; your own turn always waits for you.
+**Chow**, **Pung**, **Kong** and **Win** sit under the table and light up the
+moment that call is available — green for a set, amber for a win, with the faan
+the hand would score. Where a tile makes more than one chow, the button opens a
+short menu of the runs to choose from. **Pass** lights up whenever a discard is
+yours to claim.
+
+They also cover your own turn: Kong lights up for four of a kind in hand (or a
+tile that matches your exposed pung), and Win for a self draw.
+
+### Settings
+
+The gear button opens settings mid-game; the same options are on the title
+screen:
+
+- **Table speed** — how long the computer players take over each move:
+  **Relaxed**, **Normal**, **Brisk** or **Blitz**. It only paces the opponents;
+  your own turn always waits for you.
+- **Call buttons** — show or hide the bar. With it hidden, the options still
+  appear as buttons the moment a call is available.
+
+Both are remembered on the device.
 
 ### URL options
 
 `?play=1` deals immediately, `?seed=42` replays a specific deal, `?faan=3` and
 `?hands=8` set the options, `?speed=2` (or `?fast=1` for Blitz) sets the table
 speed, and `?auto=1` lets the computer play your seat too — a demo mode, handy
-for watching the table play itself.
+for watching the table play itself. In a dev build the store is on `window.game`
+for poking at a hand from the console.
 
 ## Scoring
 
@@ -80,9 +98,10 @@ src/game/        pure rules engine — no React, no rendering
   wall.ts        the 144-tile wall
 src/store/       zustand state machine driving a hand start to finish
 src/components/three/  the 3D table: tile model, seat layout, camera and lights
-src/components/hud/    title screen, in-game panels, result cards, rules
+src/components/hud/    title screen, in-game panels, call buttons, settings, results
 scripts/sim.ts   headless four-computer-player simulation used as a smoke test
-scripts/shot.mjs screenshots the running app through Chrome DevTools Protocol
+scripts/shot.mjs screenshots the running app through Chrome DevTools Protocol,
+                 with optional clicks and `js:` steps to drive it
 ```
 
 The table is laid out in *seat-local* space — each seat sits at `+Z` looking at

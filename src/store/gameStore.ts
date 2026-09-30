@@ -8,6 +8,7 @@ import {
 	countKinds,
 	nameOf,
 	removeTile,
+	shortLabel,
 	takeKind,
 } from "@/game/tiles";
 import type {
@@ -48,16 +49,40 @@ export const SPEED_PRESETS: SpeedPreset[] = [
 	{ label: "Blitz", value: 4 },
 ];
 
-const SPEED_KEY = "hk-mahjong:speed";
+const STORAGE_KEYS = {
+	speed: "hk-mahjong:speed",
+	callButtons: "hk-mahjong:call-buttons",
+};
+
+/** Reading and writing preferences must survive a blocked storage API. */
+function readStored<T>(key: string, parse: (raw: string) => T, fallback: T): T {
+	try {
+		const raw = localStorage.getItem(key);
+		return raw === null ? fallback : parse(raw);
+	} catch {
+		return fallback;
+	}
+}
+
+function writeStored(key: string, value: string) {
+	try {
+		localStorage.setItem(key, value);
+	} catch {
+		// A blocked storage API only costs us the remembered preference.
+	}
+}
 
 function storedSpeed(): number {
-	try {
-		const raw = localStorage.getItem(SPEED_KEY);
-		const value = raw === null ? Number.NaN : Number(raw);
-		return SPEED_PRESETS.some((preset) => preset.value === value) ? value : 1;
-	} catch {
-		return 1;
-	}
+	return readStored(
+		STORAGE_KEYS.speed,
+		(raw) => {
+			const value = Number(raw);
+			return SPEED_PRESETS.some((preset) => preset.value === value)
+				? value
+				: 1;
+		},
+		1,
+	);
 }
 
 export type Phase = "home" | "playing" | "handOver" | "gameOver";
@@ -74,6 +99,8 @@ export interface TurnAction {
 	type: "win" | "kong" | "addedKong";
 	kind: Kind;
 	label: string;
+	/** What the hand would score, for a winning action. */
+	faan?: number;
 }
 
 interface GameState {
@@ -90,6 +117,8 @@ interface GameState {
 	minFaan: number;
 	/** Multiplier on the computer players' thinking time. */
 	speed: number;
+	/** Whether the always-visible chow/pung/kong/win bar is shown. */
+	showCallButtons: boolean;
 	lastDiscard: { tile: Tile; from: Seat } | null;
 	drawnTileId: string | null;
 	awaiting: Awaiting;
@@ -105,6 +134,7 @@ interface GameState {
 
 	startGame: (opts: { minFaan: number; hands: number; seed?: number }) => void;
 	setSpeed: (speed: number) => void;
+	setShowCallButtons: (show: boolean) => void;
 	startHand: () => void;
 	nextHand: () => void;
 	goHome: () => void;
@@ -299,6 +329,7 @@ export const useGameStore = create<GameState>((set, get) => {
 					type: "win",
 					seat,
 					label: `Win (${score.faan} faan)`,
+					faan: score.faan,
 				});
 		}
 		if (counts[discard.kind] >= 3)
@@ -315,7 +346,10 @@ export const useGameStore = create<GameState>((set, get) => {
 						type: "chow",
 						seat,
 						tiles,
-						label: `Chow ${pair.map((k) => nameOf(k).split(" ")[0]).join("")}`,
+						label: `Chow ${[...pair, discard.kind]
+							.sort((a, b) => a - b)
+							.map(shortLabel)
+							.join(" ")}`,
 					});
 			}
 		}
@@ -463,6 +497,7 @@ export const useGameStore = create<GameState>((set, get) => {
 				type: "win",
 				kind: drawn.kind,
 				label: `Win — self draw (${score.faan} faan)`,
+				faan: score.faan,
 			});
 		for (let kind = 0; kind < KIND_COUNT; kind++) {
 			if (handCounts[kind] === 4)
@@ -650,7 +685,12 @@ export const useGameStore = create<GameState>((set, get) => {
 				set({
 					robbing: { seat, kind, tile },
 					claimOptions: [
-						{ type: "win", seat: 0, label: `Rob the kong (${score.faan} faan)` },
+						{
+							type: "win",
+							seat: 0,
+							label: `Rob the kong (${score.faan} faan)`,
+							faan: score.faan,
+						},
 					],
 					awaiting: "claim",
 					thinking: null,
@@ -782,6 +822,11 @@ export const useGameStore = create<GameState>((set, get) => {
 		maxHands: 4,
 		minFaan: 1,
 		speed: storedSpeed(),
+		showCallButtons: readStored(
+			STORAGE_KEYS.callButtons,
+			(raw) => raw !== "false",
+			true,
+		),
 		lastDiscard: null,
 		drawnTileId: null,
 		awaiting: null,
@@ -797,11 +842,12 @@ export const useGameStore = create<GameState>((set, get) => {
 
 		setSpeed: (speed) => {
 			set({ speed });
-			try {
-				localStorage.setItem(SPEED_KEY, String(speed));
-			} catch {
-				// A blocked storage API only costs us the remembered preference.
-			}
+			writeStored(STORAGE_KEYS.speed, String(speed));
+		},
+
+		setShowCallButtons: (show) => {
+			set({ showCallButtons: show });
+			writeStored(STORAGE_KEYS.callButtons, String(show));
 		},
 
 		startGame: ({ minFaan, hands, seed }) => {

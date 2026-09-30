@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { useGameStore } from "@/store/gameStore";
 import { RulesPanel } from "./RulesPanel";
+import { SettingToggle } from "./SettingToggle";
 import { SpeedControl } from "./SpeedControl";
 
 const FAAN_CHOICES = [
@@ -22,6 +23,8 @@ const HAND_CHOICES = [2, 4, 8];
 
 export function HomeScreen() {
 	const startGame = useGameStore((s) => s.startGame);
+	const showCallButtons = useGameStore((s) => s.showCallButtons);
+	const setShowCallButtons = useGameStore((s) => s.setShowCallButtons);
 	const [minFaan, setMinFaan] = useState(1);
 	const [hands, setHands] = useState(4);
 	const [showRules, setShowRules] = useState(false);
@@ -87,6 +90,13 @@ export function HomeScreen() {
 					</div>
 
 					<SpeedControl />
+
+					<SettingToggle
+						label="Call buttons"
+						description="Keep Chow, Pung, Kong and Win on screen, lit up whenever you can use them."
+						checked={showCallButtons}
+						onChange={setShowCallButtons}
+					/>
 
 					<div className="flex gap-3">
 						<Button

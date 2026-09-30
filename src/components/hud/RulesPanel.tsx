@@ -24,6 +24,7 @@ const SECTIONS: { title: string; lines: string[] }[] = [
 			"Pung or kong any discard from any player.",
 			"Chow only the tile discarded by the player to your left.",
 			"A win beats a pung or kong, which beats a chow. Calling a set exposes it and you discard without drawing.",
+			"The Chow, Pung, Kong and Win buttons below the table light up the moment that call is available to you — hide them in Settings if you would rather spot the calls yourself.",
 		],
 	},
 	{

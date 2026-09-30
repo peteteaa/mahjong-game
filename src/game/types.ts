@@ -63,6 +63,8 @@ export interface ClaimOption {
 	tiles?: Tile[];
 	/** Human-readable label for the claim button. */
 	label: string;
+	/** What the hand would score, for a winning claim. */
+	faan?: number;
 }
 
 export interface ScoredPattern {

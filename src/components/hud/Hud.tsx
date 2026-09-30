@@ -1,11 +1,12 @@
-import { BookOpen, Home, Lightbulb, ScrollText } from "lucide-react";
+import { BookOpen, Home, Lightbulb, ScrollText, Settings } from "lucide-react";
 import { useMemo, useState } from "react";
 import { shanten, waits } from "@/game/melds";
 import { countKinds, shortLabel } from "@/game/tiles";
 import { Button } from "@/components/ui/button";
 import { WIND_NAMES, useGameStore } from "@/store/gameStore";
+import { CallButtons } from "./CallButtons";
 import { RulesPanel } from "./RulesPanel";
-import { SpeedControl } from "./SpeedControl";
+import { SettingsPanel } from "./Settings";
 
 function Panel({
 	children,
@@ -128,13 +129,50 @@ function Advice() {
 	);
 }
 
-function ActionBar() {
+/**
+ * The prompt lives at the top of the screen: the bottom of the table belongs to
+ * the player's hand and the call buttons.
+ */
+function StatusBanner() {
+	const awaiting = useGameStore((s) => s.awaiting);
+	const turn = useGameStore((s) => s.turn);
+	const claimOptions = useGameStore((s) => s.claimOptions);
+	const thinking = useGameStore((s) => s.thinking);
+	const players = useGameStore((s) => s.players);
+
+	if (awaiting === "claim") {
+		return (
+			<Panel className="px-4 py-2.5 text-sm text-amber-100">
+				{claimOptions.length === 1
+					? "You can call this discard"
+					: "You can call this discard — pick one"}
+			</Panel>
+		);
+	}
+
+	if (awaiting === "turn" && turn === 0) {
+		return (
+			<Panel className="px-4 py-2.5 text-sm text-emerald-200/85">
+				Click a tile to discard it
+			</Panel>
+		);
+	}
+
+	return (
+		<Panel className="px-4 py-2.5 text-sm text-emerald-200/70">
+			{thinking !== null
+				? `${players[thinking].name} is thinking…`
+				: "Waiting for the other players…"}
+		</Panel>
+	);
+}
+
+/** Used when the persistent call bar is switched off: buttons only as needed. */
+function TransientActions() {
 	const awaiting = useGameStore((s) => s.awaiting);
 	const turn = useGameStore((s) => s.turn);
 	const claimOptions = useGameStore((s) => s.claimOptions);
 	const turnActions = useGameStore((s) => s.turnActions);
-	const thinking = useGameStore((s) => s.thinking);
-	const players = useGameStore((s) => s.players);
 	const humanClaim = useGameStore((s) => s.humanClaim);
 	const humanPass = useGameStore((s) => s.humanPass);
 	const humanTurnAction = useGameStore((s) => s.humanTurnAction);
@@ -142,9 +180,6 @@ function ActionBar() {
 	if (awaiting === "claim") {
 		return (
 			<Panel className="flex flex-wrap items-center justify-center gap-2 px-4 py-3">
-				<span className="mr-1 text-sm text-emerald-200/80">
-					Call the discard?
-				</span>
 				{claimOptions.map((option) => (
 					<Button
 						key={`${option.type}-${option.label}`}
@@ -169,7 +204,7 @@ function ActionBar() {
 		);
 	}
 
-	if (awaiting === "turn" && turn === 0) {
+	if (awaiting === "turn" && turn === 0 && turnActions.length > 0) {
 		return (
 			<Panel className="flex flex-wrap items-center justify-center gap-2 px-4 py-3">
 				{turnActions.map((action) => (
@@ -185,20 +220,11 @@ function ActionBar() {
 						{action.label}
 					</Button>
 				))}
-				<span className="px-2 text-sm text-emerald-200/80">
-					Click a tile to discard it
-				</span>
 			</Panel>
 		);
 	}
 
-	return (
-		<Panel className="px-4 py-3 text-sm text-emerald-200/70">
-			{thinking !== null
-				? `${players[thinking].name} is thinking…`
-				: "Waiting for the other players…"}
-		</Panel>
-	);
+	return null;
 }
 
 function Log() {
@@ -235,7 +261,9 @@ function Log() {
 
 export function Hud() {
 	const goHome = useGameStore((s) => s.goHome);
+	const showCallButtons = useGameStore((s) => s.showCallButtons);
 	const [showRules, setShowRules] = useState(false);
+	const [showSettings, setShowSettings] = useState(false);
 
 	return (
 		<>
@@ -247,7 +275,6 @@ export function Hud() {
 
 				<div className="pointer-events-auto absolute right-4 top-4 w-56 space-y-3">
 					<Scores />
-					<SpeedControl />
 					<div className="flex justify-end gap-2">
 						<Button
 							variant="outline"
@@ -256,6 +283,14 @@ export function Hud() {
 							onClick={() => setShowRules(true)}
 						>
 							<BookOpen className="h-4 w-4" />
+						</Button>
+						<Button
+							variant="outline"
+							size="icon"
+							className="border-white/15 bg-emerald-950/75 text-emerald-50 hover:bg-white/10"
+							onClick={() => setShowSettings(true)}
+						>
+							<Settings className="h-4 w-4" />
 						</Button>
 						<Button
 							variant="outline"
@@ -272,12 +307,17 @@ export function Hud() {
 					<Log />
 				</div>
 
+				<div className="pointer-events-auto absolute left-1/2 top-4 -translate-x-1/2">
+					<StatusBanner />
+				</div>
+
 				<div className="pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2">
-					<ActionBar />
+					{showCallButtons ? <CallButtons /> : <TransientActions />}
 				</div>
 			</div>
 
 			{showRules && <RulesPanel onClose={() => setShowRules(false)} />}
+			{showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
 		</>
 	);
 }
