@@ -25,3 +25,6 @@ dist-ssr
 
 # local screenshots and scratch output
 .shots
+
+# Vercel
+.vercel
