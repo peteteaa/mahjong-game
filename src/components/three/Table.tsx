@@ -65,6 +65,7 @@ const SeatTiles = memo(function SeatTiles({
 	lastDiscardId: string | null;
 }) {
 	const discard = useGameStore((s) => s.humanDiscard);
+	const flatHand = useGameStore((s) => s.flatHand);
 	const seatYaw = (player.seat * Math.PI) / 2;
 	// Cancels the seat rotation, for the tiles that are turned to the camera.
 	const faceCamera = -seatYaw;
@@ -83,8 +84,8 @@ const SeatTiles = memo(function SeatTiles({
 					key={tile.id}
 					assets={assets}
 					texture={player.isHuman ? textureFor(tile.kind) : undefined}
-					position={[xs[index], STAND_Y, LAYOUT.handZ]}
-					standing
+					position={[xs[index], flatHand ? FLAT_Y : STAND_Y, LAYOUT.handZ]}
+					standing={!flatHand}
 					selectable={interactive}
 					onSelect={interactive ? () => discard(tile.id) : undefined}
 				/>

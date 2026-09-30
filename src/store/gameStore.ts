@@ -52,6 +52,7 @@ export const SPEED_PRESETS: SpeedPreset[] = [
 const STORAGE_KEYS = {
 	speed: "hk-mahjong:speed",
 	callButtons: "hk-mahjong:call-buttons",
+	flatHand: "hk-mahjong:flat-hand",
 };
 
 /** Reading and writing preferences must survive a blocked storage API. */
@@ -119,6 +120,8 @@ interface GameState {
 	speed: number;
 	/** Whether the always-visible chow/pung/kong/win bar is shown. */
 	showCallButtons: boolean;
+	/** Whether hands lie flat on the table instead of standing up. */
+	flatHand: boolean;
 	lastDiscard: { tile: Tile; from: Seat } | null;
 	drawnTileId: string | null;
 	awaiting: Awaiting;
@@ -135,6 +138,7 @@ interface GameState {
 	startGame: (opts: { minFaan: number; hands: number; seed?: number }) => void;
 	setSpeed: (speed: number) => void;
 	setShowCallButtons: (show: boolean) => void;
+	setFlatHand: (flat: boolean) => void;
 	startHand: () => void;
 	nextHand: () => void;
 	goHome: () => void;
@@ -827,6 +831,7 @@ export const useGameStore = create<GameState>((set, get) => {
 			(raw) => raw !== "false",
 			true,
 		),
+		flatHand: readStored(STORAGE_KEYS.flatHand, (raw) => raw === "true", false),
 		lastDiscard: null,
 		drawnTileId: null,
 		awaiting: null,
@@ -848,6 +853,11 @@ export const useGameStore = create<GameState>((set, get) => {
 		setShowCallButtons: (show) => {
 			set({ showCallButtons: show });
 			writeStored(STORAGE_KEYS.callButtons, String(show));
+		},
+
+		setFlatHand: (flat) => {
+			set({ flatHand: flat });
+			writeStored(STORAGE_KEYS.flatHand, String(flat));
 		},
 
 		startGame: ({ minFaan, hands, seed }) => {

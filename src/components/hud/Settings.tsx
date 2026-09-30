@@ -7,6 +7,8 @@ import { SpeedControl } from "./SpeedControl";
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
 	const showCallButtons = useGameStore((s) => s.showCallButtons);
 	const setShowCallButtons = useGameStore((s) => s.setShowCallButtons);
+	const flatHand = useGameStore((s) => s.flatHand);
+	const setFlatHand = useGameStore((s) => s.setFlatHand);
 
 	return (
 		<div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
@@ -31,10 +33,16 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 						checked={showCallButtons}
 						onChange={setShowCallButtons}
 					/>
+					<SettingToggle
+						label="Lay hands flat"
+						description="Rest every hand face-down on the table, with yours face-up, instead of standing the tiles on edge."
+						checked={flatHand}
+						onChange={setFlatHand}
+					/>
 				</div>
 
 				<p className="mt-5 text-[11px] leading-relaxed text-emerald-200/50">
-					Both settings are remembered on this device. With the call buttons
+					These settings are remembered on this device. With the call buttons
 					hidden, the options still appear as buttons the moment a call is
 					available.
 				</p>
