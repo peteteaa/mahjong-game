@@ -66,7 +66,7 @@ const SeatTiles = memo(function SeatTiles({
 }) {
 	const discard = useGameStore((s) => s.humanDiscard);
 	const seatYaw = (player.seat * Math.PI) / 2;
-	// Cancel the seat rotation so every face stays readable from the camera.
+	// Cancels the seat rotation, for the tiles that are turned to the camera.
 	const faceCamera = -seatYaw;
 
 	const drawn = player.hand.find((t) => t.id === drawnTileId) ?? null;
@@ -114,6 +114,8 @@ const SeatTiles = memo(function SeatTiles({
 				/>
 			))}
 
+			{/* Discards keep the seat's own orientation, the way they would lie on
+			    a real table: each player's pool reads from where they sit. */}
 			{player.discards.map((tile, index) => {
 				const [x, z] = discardPosition(index);
 				return (
@@ -122,7 +124,6 @@ const SeatTiles = memo(function SeatTiles({
 						assets={assets}
 						texture={textureFor(tile.kind)}
 						position={[x, FLAT_Y, z]}
-						yaw={faceCamera}
 						highlight={tile.id === lastDiscardId}
 					/>
 				);
